@@ -11,7 +11,7 @@
 * **Tên dự án**: Hệ thống phát hiện gian lận giao dịch tài chính (Neo4j) và phòng chống tấn công dò quét mật khẩu Brute-force (Redis) — FinGuard Pro
 * **Mã đề tài**: Đề tài 16 (Nhóm 14 – Học phần: Cơ sở dữ liệu NoSQL / Hệ quản trị CSDL Hiện đại)
 * **Phiên bản tài liệu**: 1.0 (Nghiệm thu chính thức trên Neo4j Aura & Upstash Redis)
-* **Ngày phát hành**: 28/10/2026
+* **Ngày phát hành**: 25/10/2026
 * **Giảng viên hướng dẫn**: ThS. Trần Quang Bình
 * **Nhóm sinh viên thực hiện (Nhóm 14 – 2 thành viên)**:
   1. **Sinh viên 1**: Nguyễn Quang Đức – MSSV: 2001230195 – *Vai trò: Data Architect & Backend Lead (Nhóm trưởng)*
@@ -21,10 +21,10 @@
 
 | Phiên bản | Ngày | Tác giả | Tóm tắt nội dung thay đổi |
 | :---: | :---: | :---: | :--- |
-| **0.1** | 15/10/2026 | Nhóm SV | Khởi tạo cấu trúc SRS ban đầu theo khung ISO/IEC/IEEE 29148:2018. |
-| **0.5** | 20/10/2026 | Nguyễn Quang Đức | Bổ sung đặc tả mô hình đồ thị Neo4j, giao dịch toàn vẹn (ACID) và API nghiệp vụ. |
-| **0.9** | 25/10/2026 | Chu Đức Vân | Bổ sung đặc tả bảo mật Redis, chống Brute-force, OTP 2 bước và yêu cầu phi chức năng. |
-| **1.0** | 28/10/2026 | Cả nhóm | Hoàn thiện ma trận truy vết, trích xuất dữ liệu nghiệm thu hiệu năng thực tế. |
+| **0.1** | 10/10/2026 | Nhóm SV | Khởi tạo cấu trúc SRS ban đầu theo khung ISO/IEC/IEEE 29148:2018. |
+| **0.5** | 16/10/2026 | Nguyễn Quang Đức | Bổ sung đặc tả mô hình đồ thị Neo4j, giao dịch toàn vẹn (ACID) và API nghiệp vụ. |
+| **0.9** | 22/10/2026 | Chu Đức Vân | Bổ sung đặc tả bảo mật Redis, chống Brute-force, OTP 2 bước và yêu cầu phi chức năng. |
+| **1.0** | 25/10/2026 | Cả nhóm | Hoàn thiện ma trận truy vết, trích xuất dữ liệu nghiệm thu hiệu năng thực tế. |
 
 ---
 
@@ -415,7 +415,7 @@ Ma trận đối chiếu liên kết từ các yêu cầu cốt lõi của đề
 
 | Ký hiệu mục | Vị trí xuất hiện | Giá trị đồng bộ thực tế khi nộp bài chính thức |
 | :--- | :--- | :--- |
-| **Ngày nghiệm thu** | Trang bìa, Bảng lịch sử sửa đổi | `28/10/2026` (Phiên bản chính thức v1.0). |
+| **Ngày nghiệm thu** | Trang bìa, Bảng lịch sử sửa đổi | `25/10/2026` (Phiên bản chính thức v1.0). |
 | **Sinh viên thực hiện** | Trang bìa, Bảng thông tin dự án | 1. Nguyễn Quang Đức (MSSV: 2001230195 - Nhóm trưởng)<br>2. Chu Đức Vân (MSSV: 2001231028) |
 | **Giảng viên hướng dẫn** | Trang bìa, Bảng thông tin dự án | ThS. Trần Quang Bình (Khoa CNTT - ĐH Công Thương TP.HCM). |
 
