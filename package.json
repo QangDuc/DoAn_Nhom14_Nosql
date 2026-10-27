@@ -1,0 +1,28 @@
+{
+  "name": "doan16-nosql-fraud-bruteforce",
+  "version": "1.0.0",
+  "description": "Đề tài 16 – Phát hiện gian lận giao dịch (Neo4j) và chống tấn công Brute-force (Redis)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js",
+    "bench:seed": "node scripts/seed-large.js",
+    "bench:clean": "node scripts/seed-large.js --clean",
+    "bench": "node scripts/benchmark.js",
+    "test": "jest --runInBand --detectOpenHandles --forceExit",
+    "test:coverage": "jest --coverage --runInBand --detectOpenHandles --forceExit"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "neo4j-driver": "^5.20.0"
+  },
+  "devDependencies": {
+    "jest": "^30.5.2",
+    "supertest": "^7.3.1"
+  }
+}

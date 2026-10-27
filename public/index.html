@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinGuard Pro — Core Banking & Fraud Intelligence</title>
+
+  <!-- Local Offline Assets (Bảo đảm offline 100%, không phụ thuộc CDN) -->
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="vendor/vis-network.min.js"></script>
+</head>
+<body>
+
+  <!-- ================= SIDEBAR NAVIGATION ================= -->
+  <aside class="sidebar">
+    <div>
+      <div class="brand">
+        <div class="brand-logo">FG</div>
+        <div class="brand-info">
+          <h2>FinGuard Pro</h2>
+          <span>Core Banking & Fraud AI</span>
+        </div>
+      </div>
+
+      <div class="nav-menu">
+        <div class="nav-label">Giám sát & Phân tích</div>
+        <div class="nav-item active" onclick="switchTab('overview', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            <span>Trung tâm Giám sát</span>
+          </div>
+          <span id="badge-cycles" class="nav-badge danger">0</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('transfer', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 3v6h6M7 21v-6H1M21 9l-7-7-7 7M3 15l7 7 7-7"/></svg>
+            <span>Giao dịch & Chuyển tiền</span>
+          </div>
+        </div>
+        <div class="nav-item" onclick="switchTab('accounts', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+            <span>Quản lý Tài khoản</span>
+          </div>
+          <span id="badge-accounts" class="nav-badge">0</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('security', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Bảo mật & Brute-Force</span>
+          </div>
+          <span id="badge-locked" class="nav-badge danger">0</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('deep-analysis', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>
+            <span>Phân tích sâu</span>
+          </div>
+        </div>
+        <div class="nav-item" onclick="switchTab('explain', this)" tabindex="0">
+          <div class="nav-item-left">
+            <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span>Phân tích truy vấn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="engine-status">
+        <div class="status-row">
+          <span>Neo4j Engine</span>
+          <span id="neo4j-status-pill" class="status-pill fallback"><i class="dot yellow"></i> Đang tải...</span>
+        </div>
+        <div class="status-row">
+          <span>Lớp bảo vệ xác thực</span>
+          <span id="redis-status-pill" class="status-pill fallback"><i class="dot yellow"></i> Đang tải...</span>
+        </div>
+      </div>
+      <button class="btn-outline admin-only" style="width:100%" onclick="resetDemoData()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/></svg>
+        Đặt lại dữ liệu mẫu
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN AREA ================= -->
+  <div class="main-area">
+
+    <!-- CẢNH BÁO CHẾ ĐỘ MÔ PHỎNG BỘ NHỚ DÍNH TRÊN CÙNG -->
+    <div id="top-fallback-alert">
+      <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+      <span>Hệ thống đang chạy Chế độ mô phỏng bộ nhớ, không kết nối được Neo4j/Redis thật. Vui lòng kiểm tra Docker container!</span>
+    </div>
+
+    <!-- TOPBAR (XÓA CHIP GIẢ LẬP TRÊN HEADER ĐỂ TRÁNH TRÙNG LẶP THEO YÊU CẦU 3) -->
+    <header class="topbar">
+      <div class="page-heading">
+        <h1 id="topbar-title">Trung tâm Giám sát Rủi ro & Đồ thị Dòng tiền</h1>
+        <p id="topbar-subtitle">Phát hiện chu trình luân chuyển khép kín thời gian thực (Neo4j) & Chặn dò mật khẩu tự động (Redis)</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-sm btn-outline" onclick="openDemoDrawer()" title="Mở hộp bộ công cụ mô phỏng nhanh">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Bộ công cụ mô phỏng
+        </button>
+        <div class="session-pill" id="active-session-pill">
+          <svg class="icon" style="width:15px;height:15px;" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+          <span id="session-user-label" style="color:var(--text-muted)">Chưa đăng nhập</span>
+          <span id="session-user-role-badge" class="pill pill-info" style="display:none; font-size:10px; padding:1px 6px; margin-left:4px;">STAFF</span>
+        </div>
+        <button id="btn-logout" class="btn-sm btn-outline-danger" style="display:none;" onclick="handleStaffLogout()">Đăng Xuất</button>
+        <button id="btn-login-redirect" class="btn-sm btn-outline" onclick="window.location.href='/login.html'">Đăng Nhập</button>
+        <button class="btn-sm btn-primary admin-only" onclick="openCreateAccountModal()">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Mở Tài Khoản Mới
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE WORKSPACE -->
+    <main class="content-scroll">
+
+      <!-- ==================== TAB 1: TỔNG QUAN (GIÁM SÁT) ==================== -->
+      <div id="tab-overview" class="tab-view active">
+
+        <!-- 4 KPI SUMMARY CARDS: CHỈ HIỂN THỊ TẠI TAB TỔNG QUAN (YÊU CẦU 3) -->
+        <section class="kpi-grid">
+          <div class="kpi-card" id="kpi-accounts-card">
+            <div>
+              <div class="kpi-label">Tổng Tài Khoản Hoạt Động</div>
+              <div class="kpi-value" id="kpi-total-accounts">0</div>
+              <div class="kpi-sub">Định danh duy nhất trên đồ thị</div>
+            </div>
+            <div class="kpi-icon-box blue">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-tx-card">
+            <div>
+              <div class="kpi-label">Tổng Giao Dịch Lưu Chuyển</div>
+              <div class="kpi-value" id="kpi-total-tx">0</div>
+              <div class="kpi-sub">Đảm bảo toàn vẹn ACID</div>
+            </div>
+            <div class="kpi-icon-box green">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-fraud-card">
+            <div>
+              <div class="kpi-label">Chu trình luân chuyển khép kín (A→B→C→A)</div>
+              <div class="kpi-value" id="kpi-fraud-cycles" style="color:var(--danger)">0</div>
+              <div class="kpi-sub" id="kpi-fraud-accounts">0 tài khoản trong vòng lặp</div>
+            </div>
+            <div class="kpi-icon-box red">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-redis-card">
+            <div>
+              <div class="kpi-label">Tài khoản bị theo dõi</div>
+              <div class="kpi-value" id="kpi-redis-monitored" style="color:var(--warning)">0</div>
+              <div class="kpi-sub" id="kpi-redis-locked">0 đang bị khóa</div>
+            </div>
+            <div class="kpi-icon-box yellow">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+          </div>
+        </section>
+
+        <div class="overview-grid">
+
+          <!-- CỘT TRÁI: ACCORDION CHU TRÌNH + ĐỒ THỊ VIS-NETWORK -->
+          <div>
+            <!-- BANNER CHU TRÌNH DẠNG ACCORDION -->
+            <div id="fraud-accordion" class="fraud-accordion">
+              <div class="fraud-accordion-header" onclick="toggleFraudAccordion()">
+                <div class="fraud-accordion-title">
+                  <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span id="fraud-banner-title">PHÁT HIỆN 0 CHU TRÌNH LUÂN CHUYỂN KHÉP KÍN</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button class="btn-sm btn-outline" style="padding:2px 8px; font-size:11px;" onclick="event.stopPropagation(); document.getElementById('graph-view-mode').value='fraud_only'; renderCurrentGraph();">Chỉ xem đỉnh Đỏ</button>
+                  <span id="fraud-toggle-btn" style="font-size:11px; font-weight:600; color:var(--danger)">Chi tiết ▼</span>
+                </div>
+              </div>
+              <div id="fraud-cycles-list" class="fraud-accordion-body"></div>
+            </div>
+            <div id="fraud-alert-banner" style="display:none;"></div>
+
+            <!-- CARD ĐỒ THỊ VIS-NETWORK -->
+            <div class="card graph-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  Bản Đồ Mạng Lưới Giao Dịch & Dòng Tiền (Neo4j Graph)
+                </div>
+                <div id="graph-stats" style="font-size:var(--font-xs); color:var(--text-muted)">Đang phân tích...</div>
+              </div>
+
+              <!-- Thanh lọc Cypher & Rà soát chu trình nghi vấn: 3 trường bằng nhau + nút căn đáy (Yêu cầu 1) -->
+              <div class="filter-bar-aligned">
+                <div class="form-field" style="margin-bottom:0;">
+                  <label for="filter-window">Khung thời gian (giờ):</label>
+                  <input type="number" id="filter-window" placeholder="Tất cả" value="24" />
+                </div>
+                <div class="form-field" style="margin-bottom:0;">
+                  <label for="filter-min-amount">Ngưỡng giá trị tối thiểu (VNĐ):</label>
+                  <input type="number" id="filter-min-amount" value="10000000" />
+                </div>
+                <div class="form-field" style="margin-bottom:0;">
+                  <label for="graph-view-mode">Chế độ hiển thị:</label>
+                  <select id="graph-view-mode" onchange="renderCurrentGraph()">
+                    <option value="all">Toàn bộ mạng lưới</option>
+                    <option value="fraud_only">Chỉ hiện Chu trình ĐỎ</option>
+                  </select>
+                </div>
+                <div class="form-field" style="margin-bottom:0;">
+                  <button class="btn-primary" onclick="scanFraudCycles()" style="height:40px; width:100%;">
+                    <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Rà soát chu trình nghi vấn
+                  </button>
+                </div>
+              </div>
+
+              <!-- KHUNG ĐỒ THỊ BỌC TRONG CONTAINER POSITION: RELATIVE (YÊU CẦU 4) -->
+              <div class="network-viewport-wrapper">
+                <div class="graph-floating-toolbar">
+                  <button class="btn-sm btn-outline" onclick="resetGraphFit()" title="Căn chỉnh toàn bộ đồ thị vừa khung hình">
+                    <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                    Căn khung
+                  </button>
+                  <button class="btn-sm btn-outline" onclick="toggleOnlyCyclesView()" title="Bật/tắt chỉ hiện các đỉnh thuộc chu trình">
+                    Chỉ hiện chu trình
+                  </button>
+                </div>
+                <div id="network-container"></div>
+              </div>
+
+              <!-- CHÚ GIẢI GÓC ĐỒ THỊ + CHIP ẨN/HIỆN NODE CÔ LẬP (YÊU CẦU 4) -->
+              <div class="graph-legend-box">
+                <div class="legend-item">
+                  <span class="legend-dot normal"></span>
+                  <span>Tài khoản thường (Hover để xem ID)</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot fraud"></span>
+                  <span>Thuộc chu trình (Luôn hiện ID)</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-line"></span>
+                  <span>Giao dịch đáng ngờ (Đỏ mũi tên)</span>
+                </div>
+                <div class="legend-item" style="margin-left:auto;">
+                  <button id="btn-toggle-isolated" class="btn-sm btn-outline" style="font-size:11px; padding:2px 8px; cursor:pointer;" onclick="toggleIsolatedNodes()" title="Bấm để ẩn hoặc hiện các tài khoản chưa có giao dịch">
+                    <span id="isolated-count-label">0</span> tài khoản chưa có giao dịch
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- HỒ SƠ TÀI KHOẢN & SAO KÊ CHI TIẾT -->
+            <div class="card" style="margin-top:var(--space-3);">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Hồ Sơ Tài Khoản & Lịch Sử Giao Dịch
+                </div>
+                <div style="display:flex; gap:var(--space-2); align-items:center;">
+                  <input type="text" id="lookup-account-id" value="ACC001" style="width:110px; height:36px;" />
+                  <button class="btn-sm btn-primary" onclick="lookupAccountDetail()" style="height:36px;">Tra cứu</button>
+                </div>
+              </div>
+              <div id="account-history-box" class="table-wrap" style="max-height:180px;"></div>
+            </div>
+          </div>
+
+          <!-- CỘT PHẢI: BẢNG REDIS RÚT GỌN 400px (TABLE-LAYOUT: FIXED, KHÔNG CUỘN NGANG, YÊU CẦU 6) -->
+          <div style="width:400px;">
+            <div class="card" style="width:400px; box-sizing:border-box;">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Lớp bảo vệ xác thực (Top Nguy Cơ)
+                  <span class="pill pill-info" style="font-size:10px; margin-left:6px; padding:1px 6px;">Làm mới: 10s</span>
+                </div>
+                <button class="btn-sm btn-outline" onclick="switchTab('security')" title="Xem toàn bộ bảng giám sát Redis">
+                  Xem tất cả
+                </button>
+              </div>
+              <div class="table-wrap" style="overflow-x:hidden; max-height:480px;">
+                <table class="redis-compact-table">
+                  <colgroup>
+                    <col style="width:72px;">
+                    <col style="width:104px;">
+                    <col style="width:84px;">
+                    <col style="width:52px;">
+                    <col style="width:32px;">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th style="width:72px;">Tài khoản</th>
+                      <th style="width:104px;">Lần sai</th>
+                      <th style="width:84px;">Trạng thái</th>
+                      <th style="width:52px;">TTL</th>
+                      <th style="width:32px; text-align:center;">Mở</th>
+                    </tr>
+                  </thead>
+                  <tbody id="redis-security-tbody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Đang kết nối Redis...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top:8px; font-size:11px; color:var(--text-dim); text-align:right;">
+                Tự động làm mới mỗi 3s • Sắp xếp tài khoản khóa lên đầu
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================== TAB 2: CHUYỂN TIỀN (KHÔNG CÓ KPI, FULLSCREEN KHÔNG TRỐNG ĐÁY, YÊU CẦU 1 & 2) ==================== -->
+      <div id="tab-transfer" class="tab-view">
+        <div class="tab-fullscreen-grid">
+          <div class="card tab-fullscreen-card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M17 3v6h6M7 21v-6H1M21 9l-7-7-7 7M3 15l7 7 7-7"/></svg>
+                Lệnh Chuyển Tiền Ngân Hàng (Neo4j Giao dịch toàn vẹn (ACID))
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:var(--font-xs); color:var(--text-muted); font-weight:500;">Chế độ bảo vệ:</span>
+                <span id="current-fraud-mode-pill" class="pill pill-info">Giám sát</span>
+                <button id="btn-toggle-fraud-mode" class="btn-sm btn-outline admin-only" onclick="toggleFraudMode()">Chuyển sang Ngăn chặn chủ động</button>
+              </div>
+            </div>
+
+            <!-- Form lưới 2 cột: Hàng 1 = From | To, Hàng 2 = Số tiền | Nội dung (Yêu cầu 1) -->
+            <div class="form-grid-2col">
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="full-tx-from">Tài khoản trích nợ (From):</label>
+                <select id="full-tx-from"></select>
+              </div>
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="full-tx-to">Tài khoản thụ hưởng (To):</label>
+                <select id="full-tx-to"></select>
+              </div>
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="full-tx-amount">Số tiền giao dịch (VNĐ):</label>
+                <input type="number" id="full-tx-amount" value="50000000" />
+              </div>
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="full-tx-note">Nội dung thanh toán:</label>
+                <input type="text" id="full-tx-note" value="Thanh toán hợp đồng thương mại" />
+              </div>
+            </div>
+
+            <!-- Hàng 3: nút Xác Nhận (2/3) + nút 3 GD khép vòng (1/3) (Yêu cầu 1) -->
+            <div class="form-actions-2to1">
+              <button class="btn-primary" onclick="submitFullTransfer()">Xác Nhận Chuyển Khoản</button>
+              <button class="btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="autoCreateFullFraudRing()">Mô phỏng chu trình 3 bước</button>
+            </div>
+
+            <!-- KHỐI CONSOLE DÙNG FLEX:1 CUỘN NỘI BỘ, KHÔNG CÒN KHOẢNG TRỐNG DƯỚI CARD (YÊU CẦU 2) -->
+            <div class="card-body-flexible">
+              <div class="console-box-wrapper" style="flex:1; display:flex; flex-direction:column; min-height:0; margin-top:0;">
+                <div class="console-header" style="flex-shrink:0;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Kết quả giao dịch</span>
+                    <span id="full-tx-status-chip" class="console-chip c2xx" style="display:none;">200 OK</span>
+                  </div>
+                  <button class="btn-sm btn-outline" style="padding:1px 6px; font-size:11px;" onclick="copyConsoleBox('full-tx-log', this)">Sao chép</button>
+                </div>
+                <div id="full-tx-log" class="console-box" style="flex:1; min-height:160px; max-height:none; overflow-y:auto;">Kiểm tra số dư và tạo cạnh [:TRANSFERRED] toàn vẹn trong cùng transaction.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card tab-fullscreen-card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Nhật Ký Giao Dịch Toàn Hệ Thống Gần Nhất
+              </div>
+              <button class="btn-sm btn-outline" onclick="loadRecentTransactions()">Làm mới</button>
+            </div>
+            <!-- BẢNG NHẬT KÝ DÙNG FLEX:1 CUỘN NỘI BỘ, LẤP ĐẦY CHIỀU CAO (YÊU CẦU 2) -->
+            <div class="table-wrap" style="flex:1; min-height:0; max-height:none; overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mã GD</th>
+                    <th>Luồng tiền</th>
+                    <th>Số tiền</th>
+                    <th>Thời gian</th>
+                    <th>Nội dung</th>
+                  </tr>
+                </thead>
+                <tbody id="all-transactions-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 3: QUẢN LÝ TÀI KHOẢN (KHÔNG CÓ KPI, YÊU CẦU 1 & 3) ==================== -->
+      <div id="tab-accounts" class="tab-view">
+        <div class="card" style="flex:1; display:flex; flex-direction:column; margin-bottom:0;">
+          <div class="card-header" style="flex-shrink:0;">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg>
+              Danh Bạ Tài Khoản Ngân Hàng (Neo4j Node :Account)
+            </div>
+            <div style="display:flex; gap:var(--space-2); align-items:center;">
+              <!-- Ô tìm kiếm tài khoản rộng 280px có icon kính lúp (Yêu cầu 1) -->
+              <div style="position:relative; width:280px;">
+                <svg class="icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-dim); pointer-events:none; width:15px; height:15px;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="account-search-input" placeholder="Tìm theo Mã TK hoặc Họ tên..." oninput="filterAccountTable()" style="width:280px; padding-left:36px; height:40px; margin-bottom:0;" />
+              </div>
+              <button class="btn-sm btn-primary admin-only" onclick="openCreateAccountModal()" style="height:40px;">+ Thêm Tài Khoản</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="flex:1; min-height:0; max-height:none; overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã TK</th>
+                  <th>Chủ Tài Khoản</th>
+                  <th>Số Dư Khả Dụng</th>
+                  <th>Trạng Thái</th>
+                  <th>Rủi Ro</th>
+                  <th>Ngày Mở</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="accounts-crud-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 4: BẢO MẬT & BRUTE-FORCE (CHỈ CÓ THẺ THEO DÕI, FULLSCREEN KHÔNG TRỐNG ĐÁY, YÊU CẦU 2 & 3) ==================== -->
+      <div id="tab-security" class="tab-view">
+
+        <!-- THẺ THEO DÕI DUY NHẤT TRÊN TAB BẢO MẬT (YÊU CẦU 3) -->
+        <div class="kpi-card" style="max-width:340px; margin-bottom:var(--space-3); flex-shrink:0;">
+          <div>
+            <div class="kpi-label">Tài khoản bị theo dõi</div>
+            <div class="kpi-value" id="kpi-redis-monitored-sec" style="color:var(--warning)">0</div>
+            <div class="kpi-sub" id="kpi-redis-locked-sec">0 đang bị khóa</div>
+          </div>
+          <div class="kpi-icon-box yellow">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+        </div>
+
+        <div class="tab-fullscreen-grid" style="min-height:calc(100vh - 210px);">
+          <div class="card tab-fullscreen-card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Bảng Điều Khiển Chống Brute-Force (Lớp bảo vệ xác thực)
+              </div>
+              <span class="pill pill-success">Làm mới: 10s</span>
+            </div>
+            <p style="font-size:var(--font-xs); color:var(--text-muted); margin-bottom:var(--space-2); flex-shrink:0;">
+              Cơ chế: Sai mật khẩu gọi <code>INCR login:fail:{id}</code> (TTL 15 phút). Đạt 5 lần kích hoạt <code>SET login:lock:{id} EX 300</code> và <code>DEL login:fail:{id}</code> để chặn ngay tại Middleware với HTTP 429.
+            </p>
+            <div class="table-wrap" style="flex:1; min-height:0; max-height:none; overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tài khoản</th>
+                    <th>Key Redis</th>
+                    <th>Xác thực thất bại</th>
+                    <th>Trạng thái</th>
+                    <th>TTL Còn Lại</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="security-full-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- PHẦN PHONG TỎA TÀI KHOẢN (ACCOUNT:FROZEN) -->
+            <div style="margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px solid var(--border); flex-shrink:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-2);">
+                <div style="font-weight:600; font-size:var(--font-xs); display:flex; align-items:center; gap:6px;">
+                  <svg class="icon" style="color:var(--danger); width:14px; height:14px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Tài Khoản Đang Bị Phong Tỏa (account:frozen)
+                </div>
+                <button class="btn-sm btn-outline" style="font-size:11px; padding:2px 6px;" onclick="loadFrozenAccounts()">Làm mới</button>
+              </div>
+              <div class="table-wrap" style="max-height:160px; overflow-y:auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Tài khoản</th>
+                      <th>Lý do</th>
+                      <th>TTL Còn Lại</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="frozen-accounts-tbody">
+                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Không có tài khoản nào bị phong tỏa</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card tab-fullscreen-card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Kiểm thử xâm nhập: tấn công vét cạn mật khẩu
+              </div>
+            </div>
+
+            <!-- Panel test brute-force: 2 trường cùng hàng, 3 nút bên dưới (Yêu cầu 1) -->
+            <div class="form-grid-2col">
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="sec-test-account">Tài khoản mục tiêu:</label>
+                <input type="text" id="sec-test-account" value="ACC025" />
+              </div>
+              <div class="form-field" style="margin-bottom:0;">
+                <label for="sec-test-password">Mật khẩu thử nghiệm:</label>
+                <input type="password" id="sec-test-password" value="" placeholder="Nhập mật khẩu" />
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-bottom:16px;">
+              <button class="btn-primary" style="flex:1;" onclick="secTestSingleLogin(false)">Sai 1 Lần (INCR)</button>
+              <button class="btn-outline-warning" style="flex:1;" onclick="secTestBurstAttack()">Bắn 5 Request</button>
+              <button class="btn-outline" style="flex:1;" onclick="focusSecPassword()">Nhập mật khẩu</button>
+            </div>
+
+            <!-- Khối console cuộn nội bộ lấp đầy chiều cao (Yêu cầu 2) -->
+            <div class="card-body-flexible">
+              <div class="console-box-wrapper" style="flex:1; display:flex; flex-direction:column; min-height:0; margin-top:0;">
+                <div class="console-header" style="flex-shrink:0;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Phản hồi từ lớp bảo vệ xác thực</span>
+                    <span id="sec-test-status-chip" class="console-chip c4xx" style="display:none;">401 Unauthorized</span>
+                  </div>
+                  <button class="btn-sm btn-outline" style="padding:1px 6px; font-size:11px;" onclick="copyConsoleBox('sec-test-log', this)">Sao chép</button>
+                </div>
+                <div id="sec-test-log" class="console-box" style="flex:1; min-height:160px; max-height:none; overflow-y:auto;">Phản hồi từ lớp bảo vệ xác thực sẽ hiển thị tại đây...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== HÀNG CARD: CHỐNG DÒ THEO IP & PHIÊN HOẠT ĐỘNG ==================== -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--space-3); margin-top:var(--space-3); margin-bottom:var(--space-4);">
+          <!-- CARD 1: CHỐNG DÒ THEO IP -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Chống Dò Theo IP (IP Rate-Limit & Block)
+              </div>
+              <span class="pill pill-success">Làm mới: 10s</span>
+            </div>
+            <p style="font-size:var(--font-xs); color:var(--text-muted); margin-bottom:var(--space-2);">
+              Cơ chế: Mỗi lần sai gọi <code>INCR login:ip:{ip}</code> & <code>SADD login:ip:{ip}:accounts</code>. Chặn bằng <code>SET login:ipblock:{ip} EX 600</code> khi sai &ge; 20 lần hoặc thử &ge; 5 tài khoản.
+            </p>
+            <div class="table-wrap" style="max-height:220px; overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Địa chỉ IP</th>
+                    <th>Lần sai</th>
+                    <th>TK đã thử</th>
+                    <th>Trạng thái</th>
+                    <th>TTL</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="ip-status-tbody">
+                  <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Không có IP nào bị theo dõi</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- CARD 2: PHIÊN ĐANG HOẠT ĐỘNG -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Phiên Đang Hoạt Động (Active Sessions)
+              </div>
+              <span class="pill pill-success">Làm mới: 10s</span>
+            </div>
+            <p style="font-size:var(--font-xs); color:var(--text-muted); margin-bottom:var(--space-2);">
+              Cơ chế: Phiên <code>session:{token}</code> lưu JSON (IP, thời gian tạo, User-Agent). Tự động thu hồi khi tài khoản bị khóa hoặc bị đóng.
+            </p>
+            <div class="table-wrap" style="max-height:220px; overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Tài khoản</th>
+                    <th>IP</th>
+                    <th>Tuổi</th>
+                    <th>TTL</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="active-sessions-tbody">
+                  <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Không có phiên nào đang hoạt động</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 5: PHÂN TÍCH SÂU (ADVANCED FRAUD PATTERNS & LONG CYCLES) ==================== -->
+      <div id="tab-deep-analysis" class="tab-view">
+        <div class="card" style="margin-bottom:var(--space-3); flex-shrink:0;">
+          <div class="card-header">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>
+              Bộ Phát Hiện Mẫu Gian Lận Nâng Cao (Neo4j Cypher Analytics)
+            </div>
+            <button class="btn-sm btn-outline-warning admin-only" onclick="seedPatternsWithConfirm()">
+              <svg class="icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Nạp dữ liệu mẫu
+            </button>
+          </div>
+
+          <!-- CHIPS CHỌN MẪU PHÂN TÍCH -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center;">
+            <span style="font-size:var(--font-xs); font-weight:600; color:var(--text-muted); margin-right:4px;">Mẫu phát hiện:</span>
+            <button class="btn-sm btn-primary pattern-chip active" id="chip-pattern-cycles" onclick="selectPatternTab('cycles')">Chu trình dài (3-5 đỉnh)</button>
+            <button class="btn-sm btn-outline pattern-chip" id="chip-pattern-structuring" onclick="selectPatternTab('structuring')">Chia nhỏ giao dịch (Structuring)</button>
+            <button class="btn-sm btn-outline pattern-chip" id="chip-pattern-passthrough" onclick="selectPatternTab('passthrough')">Tài khoản trung chuyển (Mule account)</button>
+            <button class="btn-sm btn-outline pattern-chip" id="chip-pattern-fanout" onclick="selectPatternTab('fanout')">Phân tán dòng tiền nhanh (Rapid Fan-out)</button>
+          </div>
+
+          <!-- BỘ LỌC ĐIỀU KIỆN CHO CHU TRÌNH DÀI -->
+          <div id="filter-box-cycles" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:10px 12px; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border);">
+            <div class="form-field" style="margin-bottom:0; width:110px;">
+              <label for="filter-min-len">Độ dài tối thiểu:</label>
+              <select id="filter-min-len" style="height:36px;">
+                <option value="3" selected>3 đỉnh</option>
+                <option value="4">4 đỉnh</option>
+                <option value="5">5 đỉnh</option>
+              </select>
+            </div>
+            <div class="form-field" style="margin-bottom:0; width:110px;">
+              <label for="filter-max-len">Độ dài tối đa:</label>
+              <select id="filter-max-len" style="height:36px;">
+                <option value="3">3 đỉnh</option>
+                <option value="4">4 đỉnh</option>
+                <option value="5" selected>5 đỉnh (Max)</option>
+              </select>
+            </div>
+            <div class="form-field" style="margin-bottom:0; width:130px;">
+              <label for="filter-min-amount">Ngưỡng giá trị tối thiểu:</label>
+              <input type="number" id="filter-min-amount" value="0" placeholder="0" style="height:36px;" />
+            </div>
+            <div class="form-field" style="margin-bottom:0; width:120px;">
+              <label for="filter-window-hours">Khung thời gian (giờ):</label>
+              <input type="number" id="filter-window-hours" placeholder="Không giới hạn" style="height:36px;" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; height:36px; padding:0 4px;">
+              <input type="checkbox" id="filter-ordered" style="width:16px; height:16px; cursor:pointer;" />
+              <label for="filter-ordered" style="font-size:var(--font-xs); cursor:pointer; margin-bottom:0;">Thời gian tăng dần</label>
+            </div>
+            <button class="btn-primary" style="height:36px; padding:0 16px;" onclick="runDeepAnalysis()">Rà soát chu trình</button>
+          </div>
+
+          <!-- MÔ TẢ ĐIỀU KIỆN CHO 3 MẪU PATTERN -->
+          <div id="filter-box-pattern-desc" style="display:none; padding:10px 14px; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border); justify-content:space-between; align-items:center;">
+            <div id="pattern-rule-text" style="font-size:var(--font-xs); color:var(--text-main); font-weight:500;"></div>
+            <button class="btn-primary" style="height:36px; padding:0 16px;" onclick="runDeepAnalysis()">Phân Tích Ngay</button>
+          </div>
+        </div>
+
+        <!-- BẢNG KẾT QUẢ PHÂN TÍCH -->
+        <div class="card" style="flex:1; display:flex; flex-direction:column; min-height:360px; margin-bottom:0;">
+          <div class="card-header" style="flex-shrink:0;">
+            <div class="card-title">
+              <span id="deep-results-title">Kết Quả Phân Tích Chu Trình Dài</span>
+              <span id="deep-count-badge" class="pill pill-info" style="margin-left:6px;">0 phát hiện</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:var(--font-xs); color:var(--text-muted);">Thời gian truy vấn:</span>
+              <span id="deep-duration-label" style="font-size:var(--font-xs); font-weight:700; color:var(--primary); font-family:monospace;">0 ms</span>
+            </div>
+          </div>
+
+          <!-- Trạng thái đang tải -->
+          <div id="deep-loading-state" style="display:none; padding:32px; text-align:center; color:var(--text-muted); font-size:var(--font-sm);">
+            <div style="display:inline-block; margin-bottom:8px;">
+              <svg class="icon" style="width:24px; height:24px; color:var(--primary); animation: spin 1s linear infinite;" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+            </div>
+            <div>Đang thực thi thuật toán phân tích Cypher trên đồ thị Neo4j...</div>
+          </div>
+
+          <!-- Trạng thái rỗng -->
+          <div id="deep-empty-state" style="display:none; padding:36px 16px; text-align:center; color:var(--text-muted);">
+            <svg class="icon" style="width:36px; height:36px; color:var(--text-dim); margin-bottom:8px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div style="font-weight:600; font-size:var(--font-sm);">Không phát hiện mẫu gian lận nào</div>
+            <div style="font-size:var(--font-xs); margin-top:4px;">Không có dữ liệu nào khớp với ngưỡng lọc hiện tại hoặc hãy bấm "Nạp dữ liệu mẫu" để thử nghiệm.</div>
+          </div>
+          <!-- Trạng thái lỗi truy vấn -->
+          <div id="deep-error-state" style="display:none; padding:28px 16px; text-align:center;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; background:var(--danger-surface); color:var(--danger); margin-bottom:10px;">
+              <svg class="icon" style="width:24px; height:24px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div id="deep-error-msg" style="font-weight:600; font-size:var(--font-sm); color:var(--danger); max-width:680px; margin:0 auto; word-break:break-word;">Lỗi thực thi truy vấn</div>
+            <div style="margin-top:12px;">
+              <button class="btn-sm btn-outline" style="padding:4px 14px;" onclick="runDeepAnalysis()">Thử lại</button>
+            </div>
+          </div>
+
+          <!-- Bảng kết quả -->
+          <div class="table-wrap" id="deep-table-wrap" style="flex:1; min-height:0; overflow-y:auto;">
+            <table>
+              <thead id="deep-results-thead"></thead>
+              <tbody id="deep-results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 6: PHÂN TÍCH TRUY VẤN (QUERY EXPLAIN / PROFILE) ==================== -->
+      <div id="tab-explain" class="tab-view">
+        <div class="card" style="margin-bottom:var(--space-3); flex-shrink:0;">
+          <div class="card-header">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Phân Tích Kế Hoạch Thực Thi Truy Vấn Cypher (PROFILE Explain)
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-field" style="margin-bottom:0; width:340px;">
+              <label for="explain-query-select">Chọn câu truy vấn phân tích:</label>
+              <select id="explain-query-select" style="height:38px;">
+                <option value="cycles3" selected>Chu trình khép kín 3 đỉnh (A → B → C → A)</option>
+                <option value="cyclesLong">Chu trình khép kín độ dài biến đổi (3-5 đỉnh)</option>
+                <option value="structuring">Chia nhỏ giao dịch (Structuring)</option>
+                <option value="passthrough">Tài khoản trung chuyển (Mule account)</option>
+                <option value="fanout">Phân tán dòng tiền nhanh (Rapid Fan-out)</option>
+              </select>
+            </div>
+            <button class="btn-primary" id="btn-run-explain" style="height:38px; padding:0 20px;" onclick="runCypherExplain()">
+              Chạy PROFILE
+            </button>
+          </div>
+        </div>
+
+        <div id="explain-results-container" style="display:none; flex-direction:column; gap:var(--space-3);">
+          <!-- HÀNG CHIP THỐNG KÊ HIỆU NĂNG -->
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="kpi-card" style="flex:1; min-width:180px; padding:12px 16px;">
+              <div class="kpi-label">Thời gian thực thi</div>
+              <div class="kpi-value" id="explain-chip-time" style="color:var(--primary); font-size:20px;">0 ms</div>
+            </div>
+            <div class="kpi-card" style="flex:1; min-width:180px; padding:12px 16px;">
+              <div class="kpi-label">Tổng DB Hits</div>
+              <div class="kpi-value" id="explain-chip-dbhits" style="color:var(--warning); font-size:20px;">0</div>
+            </div>
+            <div class="kpi-card" style="flex:1; min-width:180px; padding:12px 16px;">
+              <div class="kpi-label">Số dòng kết quả (Rows)</div>
+              <div class="kpi-value" id="explain-chip-rows" style="color:var(--success); font-size:20px;">0</div>
+            </div>
+          </div>
+
+          <!-- KHỐI CODE CYPHER -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header" style="padding-bottom:8px;">
+              <div class="card-title" style="font-size:var(--font-xs);">
+                Câu lệnh Cypher đã thực thi
+              </div>
+              <button class="btn-sm btn-outline" onclick="copyConsoleBox('explain-cypher-code', this)">Sao chép Cypher</button>
+            </div>
+            <div class="console-box-wrapper" style="margin-top:0;">
+              <pre id="explain-cypher-code" class="console-box" style="max-height:220px; font-family:monospace; font-size:12px; overflow-x:auto; white-space:pre-wrap;"></pre>
+            </div>
+          </div>
+
+          <!-- BẢNG TOÁN TỬ KẾ HOẠCH (OPERATOR PLAN) -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header">
+              <div class="card-title">
+                Chi Tiết Kế Hoạch Thực Thi (Execution Plan Operators)
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:350px; overflow-y:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:50%;">Toán tử (Operator)</th>
+                    <th style="width:25%;">DB Hits</th>
+                    <th style="width:25%;">Số dòng (Rows)</th>
+                  </tr>
+                </thead>
+                <tbody id="explain-plan-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= NGĂN KÉO BỘ CÔNG CỤ MÔ PHỎNG (DRAWER) ================= -->
+  <div id="demo-drawer-backdrop" class="drawer-backdrop" onclick="closeDemoDrawer()"></div>
+  <div id="demo-drawer-panel" class="drawer-panel">
+    <div class="drawer-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg class="icon" style="color:var(--primary)" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <h3 style="font-size:var(--font-sm); font-weight:700;">Bộ Công Cụ Mô Phỏng Nhanh</h3>
+      </div>
+      <button class="btn-sm btn-outline" onclick="closeDemoDrawer()">✕ Đóng</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- CỔNG ĐĂNG NHẬP NHANH (GIỮ NGUYÊN MỌI ID) -->
+      <div class="card" style="box-shadow:none; border:1px solid var(--border);">
+        <div class="card-header">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Xác Thực & Thử Khóa Tự Động
+          </div>
+        </div>
+
+        <!-- CHỌN VAI TRÒ ĐĂNG NHẬP: KHÁCH HÀNG / NHÂN VIÊN -->
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <button id="card-role-customer" type="button" class="btn-sm btn-outline" style="flex:1;" onclick="setDashboardLoginRole('CUSTOMER')">Khách Hàng</button>
+          <button id="card-role-staff" type="button" class="btn-sm btn-primary" style="flex:1;" onclick="setDashboardLoginRole('STAFF')">Nhân Viên</button>
+        </div>
+
+        <div class="form-grid-2col">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="login-account" id="login-account-label">Mã nhân viên / Tài khoản:</label>
+            <input type="text" id="login-account" value="STAFF001" />
+            <div class="field-error" id="err-login-account">Vui lòng nhập tài khoản</div>
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="login-password">Mật khẩu:</label>
+            <input type="password" id="login-password" value="" placeholder="Nhập mật khẩu" />
+            <div class="field-error" id="err-login-password">Vui lòng nhập mật khẩu</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:var(--space-2); margin-top:12px; margin-bottom:12px;">
+          <button class="btn-primary" style="flex:1" onclick="submitLogin()">Đăng Nhập</button>
+          <button class="btn-outline-warning" onclick="simulateBruteForceAttack()">Giả lập 5x</button>
+          <button class="btn-outline" onclick="fillCorrectPassword()">Nhập mật khẩu</button>
+        </div>
+
+        <div class="console-box-wrapper">
+          <div class="console-header">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span>Kết quả xác thực</span>
+              <span id="login-status-chip" class="console-chip c2xx" style="display:none;">200 OK</span>
+            </div>
+            <button class="btn-sm btn-outline" style="padding:1px 6px; font-size:11px;" onclick="copyConsoleBox('login-result', this)">Sao chép</button>
+          </div>
+          <div id="login-result" class="console-box">Sẵn sàng kiểm tra xác thực.</div>
+        </div>
+      </div>
+
+      <!-- CHUYỂN KHOẢN NHANH & TẠO CHU TRÌNH (GIỮ NGUYÊN MỌI ID) -->
+      <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-top:var(--space-3);">
+        <div class="card-header">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 3v6h6M7 21v-6H1M21 9l-7-7-7 7M3 15l7 7 7-7"/></svg>
+            Chuyển Khoản Nhanh & Khép Vòng
+          </div>
+        </div>
+        <div class="form-grid-2col">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-from">Từ TK (From):</label>
+            <input type="text" id="tx-from" value="ACC030" />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-to">Đến TK (To):</label>
+            <input type="text" id="tx-to" value="ACC031" />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-amount">Số tiền (VNĐ):</label>
+            <input type="number" id="tx-amount" value="45000000" />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-note">Nội dung:</label>
+            <input type="text" id="tx-note" value="Chuyển khoản nội bộ" />
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="submitTransaction()">Thực Hiện Giao Dịch Toàn Vẹn (ACID)</button>
+
+        <div style="margin-top:var(--space-3); padding-top:var(--space-2); border-top:1px dashed var(--border);">
+          <label style="font-size:11px; font-weight:600;">Khép nhanh chu trình ACC030 → ACC031 → ACC032 → ACC030:</label>
+          <div style="display:flex; gap:var(--space-1); margin-top:6px; flex-wrap:wrap;">
+            <button class="btn-sm btn-outline" onclick="setQuickTx('ACC030','ACC031',45000000,'Chuyển vốn đợt 1')">1) 30→31</button>
+            <button class="btn-sm btn-outline" onclick="setQuickTx('ACC031','ACC032',44500000,'Hợp đồng dịch vụ')">2) 31→32</button>
+            <button class="btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="setQuickTx('ACC032','ACC030',44000000,'Hoàn trả ủy thác')">3) 32→30 (Khép vòng)</button>
+          </div>
+        </div>
+
+        <div class="console-box-wrapper" style="margin-top:12px;">
+          <div class="console-header">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span>Kết quả giao dịch</span>
+              <span id="tx-status-chip" class="console-chip c2xx" style="display:none;">200 OK</span>
+            </div>
+            <button class="btn-sm btn-outline" style="padding:1px 6px; font-size:11px;" onclick="copyConsoleBox('tx-result', this)">Sao chép</button>
+          </div>
+          <div id="tx-result" class="console-box">Chưa phát sinh giao dịch mới.</div>
+        </div>
+      </div>
+
+      <!-- KIỂM THỬ XÂM NHẬP: TẤN CÔNG VÉT CẠN MẬT KHẨU -->
+      <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-top:var(--space-3);">
+        <div class="card-header">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Kiểm thử xâm nhập: tấn công vét cạn mật khẩu
+          </div>
+        </div>
+        <p style="font-size:var(--font-xs); color:var(--text-muted); margin-bottom:var(--space-2);">
+          Server tự gửi request với 50 mật khẩu phổ biến nhất. Chọn chế độ Đơn nguồn (Single IP) hoặc Phân tán (Distributed IPs).
+        </p>
+        <div class="form-grid-2col">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="attack-target-account">Tài khoản mục tiêu:</label>
+            <input type="text" id="attack-target-account" value="ACC026" />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="attack-mode">Chế độ tấn công:</label>
+            <select id="attack-mode">
+              <option value="single" selected>Đơn nguồn (Single IP)</option>
+              <option value="distributed">Phân tán (Distributed IPs)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2col" style="margin-top:8px;">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="attack-attempts">Số lần thử (tối đa 100):</label>
+            <input type="number" id="attack-attempts" value="50" min="1" max="100" />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="attack-delay">Độ trễ mỗi lượt (ms):</label>
+            <input type="number" id="attack-delay" value="50" min="0" max="200" />
+          </div>
+        </div>
+        <button id="btn-run-attack" class="btn-primary" style="width:100%; margin-top:12px;" onclick="runDictionaryAttackSimulation()">
+          Bắt Đầu Kiểm Thử Xâm Nhập (Tấn Công Vét Cạn)
+        </button>
+        <div id="attack-summary-box" style="display:none; margin-top:12px; padding:10px 12px; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border);">
+          <div style="font-weight:600; font-size:var(--font-xs); margin-bottom:8px;">Tổng kết kết quả tấn công:</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;" id="attack-summary-chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL TẠO / SỬA TÀI KHOẢN ================= -->
+  <div id="account-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="card-header">
+        <div class="card-title" id="modal-account-title">Mở Tài Khoản Mới</div>
+        <button class="btn-sm btn-outline" onclick="closeAccountModal()">✕</button>
+      </div>
+      <input type="hidden" id="modal-mode" value="create" />
+      <div class="form-field">
+        <label for="modal-account-id">Mã định danh (UNIQUE):</label>
+        <input type="text" id="modal-account-id" placeholder="VD: ACC051" />
+      </div>
+
+      <div class="form-field">
+        <label for="modal-owner-name">Họ và tên chủ tài khoản:</label>
+        <input type="text" id="modal-owner-name" placeholder="VD: Nguyễn Minh Quân" />
+      </div>
+
+      <div class="form-field">
+        <label for="modal-balance">Số dư (VNĐ):</label>
+        <input type="number" id="modal-balance" value="50000000" />
+      </div>
+
+      <div class="form-field">
+        <label for="modal-password">Mật khẩu giao dịch:</label>
+        <input type="text" id="modal-password" value="" placeholder="Nhập mật khẩu" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:var(--space-2); margin-top:var(--space-3);">
+        <button class="btn-outline" onclick="closeAccountModal()">Hủy</button>
+        <button class="btn-primary" onclick="saveAccountModal()">Lưu Tài Khoản</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANEL NHẬT KÝ TRỰC TIẾP (REDIS STREAM SSE) ==================== -->
+  <div id="live-events-panel" class="live-events-panel collapsed">
+    <div class="live-events-header" onclick="toggleLiveEventsPanel()">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="pulse-indicator"></span>
+        <span style="font-weight:600; font-size:var(--font-xs);">Luồng sự kiện bảo mật (Redis Stream)</span>
+        <span id="events-count-badge" class="pill pill-primary" style="font-size:10px; padding:1px 6px;">0</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button class="btn-sm btn-outline" id="btn-pause-stream" style="padding:2px 8px; font-size:11px;" onclick="togglePauseStream(event)">Tạm dừng</button>
+        <span id="events-panel-toggle-icon" style="font-size:11px; font-weight:bold; color:var(--text-muted);">▲</span>
+      </div>
+    </div>
+    <div id="live-events-body" class="live-events-body">
+      <div id="live-events-list" class="live-events-list">
+        <div style="text-align:center; padding:14px; color:var(--text-muted); font-size:var(--font-xs);">Đang kết nối SSE Stream...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- Local Offline Application Logic -->
+  <script src="js/app.js"></script>
+</body>
+</html>

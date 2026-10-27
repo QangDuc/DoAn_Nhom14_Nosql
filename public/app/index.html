@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khách Hàng — FinGuard Digital Banking</title>
+  <link rel="stylesheet" href="../css/app.css">
+  <style>
+    .customer-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .customer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .customer-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-normal);
+    }
+    .balance-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-md);
+    }
+    .balance-amount {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #38bdf8;
+      margin: 12px 0;
+      font-family: 'SF Mono', monospace;
+    }
+    .info-row {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+    .info-item b {
+      color: #f1f5f9;
+    }
+    .tx-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .alert-box {
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+    }
+  </style>
+</head>
+<body>
+  <div class="customer-container">
+    <!-- HEADER -->
+    <header class="customer-header">
+      <div class="customer-brand">
+        <svg style="width:28px; height:28px; fill:var(--primary);" viewBox="0 0 24 24">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+        </svg>
+        <span>FinGuard Banking</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span id="customer-name-display" style="font-weight:600; color:var(--text-normal);">Đang tải...</span>
+        <button class="btn-outline-danger btn-sm" onclick="handleCustomerLogout()">Đăng Xuất</button>
+      </div>
+    </header>
+
+    <!-- THẺ SỐ DƯ TÀI KHOẢN -->
+    <div class="balance-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; color:#94a3b8;">Số Dư Khả Dụng</span>
+        <span id="customer-status-badge" class="pill pill-success">HOẠT ĐỘNG</span>
+      </div>
+      <div class="balance-amount" id="customer-balance-display">0 đ</div>
+      <div class="info-row">
+        <div class="info-item">Số tài khoản: <b id="customer-acc-display">--</b></div>
+        <div class="info-item">Chủ tài khoản: <b id="customer-owner-display">--</b></div>
+        <div class="info-item">Ngày mở: <b id="customer-created-display">--</b></div>
+      </div>
+    </div>
+
+    <!-- KHUNG CHUYỂN TIỀN VÀ XÁC THỰC OTP -->
+    <div class="tx-table-card" style="margin-bottom:24px;">
+      <h3 style="margin:0 0 16px 0; font-size:1.1rem; color:var(--text-normal);">Chuyển Tiền Trực Tuyến (Xác Thực OTP)</h3>
+      <div id="transfer-alert" class="alert-box" style="display:none;"></div>
+
+      <!-- BƯỚC 1: KHỞI TẠO LỆNH CHUYỂN TIỀN -->
+      <form id="transfer-form-step1" onsubmit="handleInitiateTransfer(event)">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-to-account">Tài khoản người nhận:</label>
+            <input type="text" id="tx-to-account" placeholder="VD: ACC003" required />
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <label for="tx-amount">Số tiền (VNĐ):</label>
+            <input type="number" id="tx-amount" min="1000" placeholder="VD: 5000000" required />
+          </div>
+        </div>
+        <div class="form-field" style="margin-top:12px; margin-bottom:0;">
+          <label for="tx-note">Nội dung chuyển tiền:</label>
+          <input type="text" id="tx-note" placeholder="VD: Chuyen tien thanh toan" value="Chuyển khoản thanh toán" />
+        </div>
+        <button type="submit" id="btn-initiate" class="btn-primary" style="margin-top:14px; height:40px; width:100%;">
+          Tiếp Tục (Nhận Mã OTP)
+        </button>
+      </form>
+
+      <!-- BƯỚC 2: XÁC THỰC MÃ OTP -->
+      <form id="transfer-form-step2" style="display:none;" onsubmit="handleConfirmTransfer(event)">
+        <div id="otp-info-box" style="padding:12px 14px; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:14px; font-size:0.9rem;">
+          <div>Chuyển tới tài khoản <b id="otp-display-to">--</b> số tiền <b id="otp-display-amount" style="color:var(--primary);">--</b></div>
+          <div id="otp-demo-hint" style="margin-top:6px; color:#10b981; font-weight:600;"></div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Mã OTP có hiệu lực trong 60 giây (tối đa 3 lần thử).</div>
+        </div>
+        <div class="form-field" style="margin-bottom:0;">
+          <label for="input-otp">Mã xác thực OTP (6 chữ số):</label>
+          <input type="text" id="input-otp" maxlength="6" pattern="[0-9]{6}" placeholder="Nhập 6 chữ số OTP" required style="font-size:1.2rem; letter-spacing:4px; text-align:center;" />
+        </div>
+        <div style="display:flex; gap:12px; margin-top:14px;">
+          <button type="button" class="btn-outline" style="flex:1; height:40px;" onclick="cancelOtpStep()">Hủy / Quay lại</button>
+          <button type="submit" id="btn-confirm" class="btn-primary" style="flex:2; height:40px;">Xác Nhận Chuyển Tiền</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- LỊCH SỬ GIAO DỊCH -->
+    <div class="tx-table-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.1rem; color:var(--text-normal);">Lịch Sử Giao Dịch Của Tôi</h3>
+        <button class="btn-sm btn-outline" onclick="loadCustomerData()">Làm Mới</button>
+      </div>
+      <div class="table-wrap" style="max-height:400px; overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã GD</th>
+              <th>Loại</th>
+              <th>Đối tác</th>
+              <th style="text-align:right;">Số tiền</th>
+              <th>Thời gian</th>
+              <th>Nội dung</th>
+            </tr>
+          </thead>
+          <tbody id="tx-history-tbody">
+            <tr>
+              <td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Đang tải lịch sử giao dịch...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let myAccountId = null;
+    let activeTxRef = null;
+
+    function getToken() {
+      return sessionStorage.getItem('token') ||
+             sessionStorage.getItem('fg_auth_token');
+    }
+
+    function isSameOriginApi(resource) {
+      try {
+        const urlStr = typeof resource === 'string' ? resource : (resource?.url || '');
+        if (!urlStr) return false;
+        const parsed = new URL(urlStr, window.location.origin);
+        return parsed.origin === window.location.origin && parsed.pathname.startsWith('/api/');
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Interceptor: Chỉ gắn Authorization khi URL cùng nguồn gốc bắt đầu bằng "/api/" (Việc 3)
+    const _origFetch = window.fetch;
+    window.fetch = async function(resource, init = {}) {
+      init = init || {};
+      const token = getToken();
+
+      // Chỉ gắn Authorization khi URL là đường dẫn cùng nguồn gốc bắt đầu bằng "/api/" (tuyệt đối không gắn cho tên miền khác)
+      if (token && isSameOriginApi(resource)) {
+        let headers = init.headers;
+        if (!headers) {
+          headers = { 'Content-Type': 'application/json' };
+          headers['Authorization'] = 'Bearer ' + token;
+          init.headers = headers;
+        } else if (headers instanceof Headers) {
+          if (!headers.has('Authorization')) {
+            headers.set('Authorization', 'Bearer ' + token);
+          }
+        } else if (typeof headers === 'object') {
+          if (!headers['Authorization'] && !headers['authorization']) {
+            headers['Authorization'] = 'Bearer ' + token;
+          }
+        }
+      }
+
+      const response = await _origFetch(resource, init);
+
+      const urlStr = typeof resource === 'string' ? resource : (resource?.url || '');
+      let isAuthLogin = false;
+      try {
+        const parsed = new URL(urlStr, window.location.origin);
+        isAuthLogin = parsed.origin === window.location.origin && (parsed.pathname === '/api/auth/login' || parsed.pathname === '/api/staff/login');
+      } catch (_) {
+        isAuthLogin = urlStr.includes('/api/auth/login') || urlStr.includes('/api/staff/login');
+      }
+
+      // Không chuyển hướng về login khi 401 xảy ra ở /api/auth/login (Việc 3) hoặc khi nhập sai OTP ở /confirm
+      if (response.status === 401 && !isAuthLogin && !urlStr.includes('/api/transactions/confirm')) {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('fg_auth_token');
+        sessionStorage.removeItem('fg_auth_account');
+        sessionStorage.removeItem('fg_user_role');
+        window.location.href = '/login.html';
+      }
+      return response;
+    };
+
+    function getHeaders() {
+      const token = getToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
+
+    function showAlert(msg, isSuccess = false) {
+      const alertBox = document.getElementById('transfer-alert');
+      alertBox.className = isSuccess ? 'alert-box alert-success' : 'alert-box alert-danger';
+      alertBox.textContent = msg;
+      alertBox.style.display = 'block';
+    }
+
+    function hideAlert() {
+      const alertBox = document.getElementById('transfer-alert');
+      alertBox.style.display = 'none';
+    }
+
+    async function loadCustomerData() {
+      try {
+        const token = getToken();
+        if (!token) {
+          window.location.href = '/login.html';
+          return;
+        }
+
+        // 1. Tải thông tin tài khoản
+        const accRes = await fetch('/api/me/account', { headers: getHeaders(), credentials: 'include' });
+        if (accRes.status === 401 || accRes.status === 403) {
+          window.location.href = '/login.html';
+          return;
+        }
+        const accData = await accRes.json();
+        const acc = accData.account;
+        myAccountId = acc.accountId;
+
+        document.getElementById('customer-name-display').textContent = acc.ownerName;
+        document.getElementById('customer-owner-display').textContent = acc.ownerName;
+        document.getElementById('customer-acc-display').textContent = acc.accountId;
+        document.getElementById('customer-balance-display').textContent = Number(acc.balance).toLocaleString('vi-VN') + ' đ';
+
+        const statusBadge = document.getElementById('customer-status-badge');
+        statusBadge.textContent = acc.status;
+        statusBadge.className = acc.status === 'ACTIVE' ? 'pill pill-success' : 'pill pill-danger';
+
+        if (acc.createdAt) {
+          document.getElementById('customer-created-display').textContent = new Date(Number(acc.createdAt)).toLocaleDateString('vi-VN');
+        }
+
+        // 2. Tải lịch sử giao dịch
+        const txRes = await fetch('/api/me/transactions', { headers: getHeaders(), credentials: 'include' });
+        const txData = await txRes.json();
+        const tbody = document.getElementById('tx-history-tbody');
+        tbody.innerHTML = '';
+
+        if (!txData.transactions || txData.transactions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Chưa có giao dịch nào</td></tr>';
+          return;
+        }
+
+        txData.transactions.forEach(t => {
+          const isOut = t.isOutgoing;
+          const partner = isOut ? `${t.toAccount} (${t.toName})` : `${t.fromAccount} (${t.fromName})`;
+          const amountColor = isOut ? 'color:#ef4444;' : 'color:#10b981;';
+          const prefix = isOut ? '-' : '+';
+          const typeBadge = isOut ? '<span class="pill pill-warning">Gửi tiền</span>' : '<span class="pill pill-success">Nhận tiền</span>';
+          const dateStr = t.timestamp ? new Date(Number(t.timestamp)).toLocaleString('vi-VN') : '--';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code>${t.txId}</code></td>
+            <td>${typeBadge}</td>
+            <td>${partner}</td>
+            <td style="text-align:right; font-weight:700; ${amountColor}">${prefix}${Number(t.amount).toLocaleString('vi-VN')} đ</td>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${dateStr}</td>
+            <td style="font-size:0.85rem;">${t.note || ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Lỗi khi tải dữ liệu khách hàng:', err);
+      }
+    }
+
+    async function handleInitiateTransfer(event) {
+      event.preventDefault();
+      hideAlert();
+
+      const toAccountId = document.getElementById('tx-to-account').value.trim();
+      const amount = Number(document.getElementById('tx-amount').value);
+      const note = document.getElementById('tx-note').value.trim();
+      const btn = document.getElementById('btn-initiate');
+
+      btn.disabled = true;
+      btn.textContent = 'Đang khởi tạo lệnh...';
+
+      try {
+        const res = await fetch('/api/transactions/initiate', {
+          method: 'POST',
+          headers: getHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            fromAccountId: myAccountId,
+            toAccountId,
+            amount,
+            note
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          activeTxRef = data.txRef;
+          document.getElementById('otp-display-to').textContent = toAccountId;
+          document.getElementById('otp-display-amount').textContent = Number(amount).toLocaleString('vi-VN') + ' đ';
+
+          const hintEl = document.getElementById('otp-demo-hint');
+          if (data.otp) {
+            hintEl.innerHTML = `Mã OTP SMS (Mô phỏng): <b style="font-size:1.1rem; color:#0284c7; background:rgba(2,132,199,0.1); padding:2px 8px; border-radius:4px;">${data.otp}</b>`;
+            document.getElementById('input-otp').value = data.otp;
+          } else {
+            hintEl.textContent = 'Mã OTP đã được gửi đến số điện thoại đăng ký của quý khách.';
+            document.getElementById('input-otp').value = '';
+          }
+
+          document.getElementById('transfer-form-step1').style.display = 'none';
+          document.getElementById('transfer-form-step2').style.display = 'block';
+          showAlert('Mã OTP đã được tạo thành công. Vui lòng xác thực.', true);
+        } else {
+          showAlert(data.error || 'Khởi tạo giao dịch thất bại');
+        }
+      } catch (err) {
+        showAlert('Lỗi kết nối máy chủ: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tiếp Tục (Nhận Mã OTP)';
+      }
+    }
+
+    async function handleConfirmTransfer(event) {
+      event.preventDefault();
+      hideAlert();
+
+      const otp = document.getElementById('input-otp').value.trim();
+      const btn = document.getElementById('btn-confirm');
+
+      btn.disabled = true;
+      btn.textContent = 'Đang xác thực OTP...';
+
+      try {
+        const res = await fetch('/api/transactions/confirm', {
+          method: 'POST',
+          headers: getHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            txRef: activeTxRef,
+            otp
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert(data.message || 'Giao dịch chuyển tiền thành công!', true);
+          cancelOtpStep();
+          document.getElementById('tx-to-account').value = '';
+          document.getElementById('tx-amount').value = '';
+          await loadCustomerData();
+        } else {
+          showAlert(data.error || 'Xác thực OTP thất bại');
+        }
+      } catch (err) {
+        showAlert('Lỗi kết nối máy chủ: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Xác Nhận Chuyển Tiền';
+      }
+    }
+
+    function cancelOtpStep() {
+      activeTxRef = null;
+      document.getElementById('transfer-form-step2').style.display = 'none';
+      document.getElementById('transfer-form-step1').style.display = 'block';
+      document.getElementById('input-otp').value = '';
+    }
+
+    async function handleCustomerLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', headers: getHeaders(), credentials: 'include' });
+      } catch (_) {}
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('fg_auth_token');
+      sessionStorage.removeItem('fg_auth_account');
+      sessionStorage.removeItem('fg_user_role');
+      window.location.href = '/login.html';
+    }
+
+    // Tự động tải dữ liệu khi trang mở
+    loadCustomerData();
+  </script>
+</body>
+</html>
