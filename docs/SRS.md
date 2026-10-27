@@ -6,12 +6,14 @@
 
 ### THÔNG TIN HỒ SƠ DỰ ÁN
 
-* **Tên dự án**: Hệ thống phát hiện gian lận giao dịch tài chính (Neo4j) và phòng chống tấn công dò quét mật khẩu Brute-force (Redis)
-* **Mã đề tài**: Đề tài 16 (Học phần: Cơ sở dữ liệu NoSQL / Hệ quản trị CSDL Hiện đại)
-* **Phiên bản tài liệu**: 1.0
-* **Ngày phát hành**: [ĐIỀN NGÀY]
-* **Giảng viên hướng dẫn**: [GIẢNG VIÊN]
-* **Nhóm sinh viên thực hiện (Nhóm 2 thành viên)**:
+* **Đơn vị đào tạo**: BỘ CÔNG THƯƠNG — TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH (HUIT)
+* **Khoa / Bộ môn**: KHOA CÔNG NGHỆ THÔNG TIN — BỘ MÔN HỆ THỐNG THÔNG TIN
+* **Tên dự án**: Hệ thống phát hiện gian lận giao dịch tài chính (Neo4j) và phòng chống tấn công dò quét mật khẩu Brute-force (Redis) — FinGuard Pro
+* **Mã đề tài**: Đề tài 16 (Nhóm 14 – Học phần: Cơ sở dữ liệu NoSQL / Hệ quản trị CSDL Hiện đại)
+* **Phiên bản tài liệu**: 1.0 (Nghiệm thu chính thức trên Neo4j Aura & Upstash Redis)
+* **Ngày phát hành**: 28/10/2026
+* **Giảng viên hướng dẫn**: ThS. Trần Quang Bình
+* **Nhóm sinh viên thực hiện (Nhóm 14 – 2 thành viên)**:
   1. **Sinh viên 1**: Nguyễn Quang Đức – MSSV: 2001230195 – *Vai trò: Data Architect & Backend Lead (Nhóm trưởng)*
   2. **Sinh viên 2**: Chu Đức Vân – MSSV: 2001231028 – *Vai trò: Security & Integration Lead*
 
@@ -19,10 +21,10 @@
 
 | Phiên bản | Ngày | Tác giả | Tóm tắt nội dung thay đổi |
 | :---: | :---: | :---: | :--- |
-| **0.1** | [ĐIỀN NGÀY] | Nhóm SV | Khởi tạo cấu trúc SRS ban đầu theo khung ISO/IEC/IEEE 29148:2018. |
-| **0.5** | [ĐIỀN NGÀY] | SV1 | Bổ sung đặc tả mô hình đồ thị Neo4j, giao dịch toàn vẹn (ACID) và API nghiệp vụ. |
-| **0.9** | [ĐIỀN NGÀY] | SV2 | Bổ sung đặc tả bảo mật Redis, chống Brute-force, OTP 2 bước và yêu cầu phi chức năng. |
-| **1.0** | [ĐIỀN NGÀY] | Cả nhóm | Hoàn thiện ma trận truy vết, trích xuất dữ liệu nghiệm thu hiệu năng thực tế. |
+| **0.1** | 15/10/2026 | Nhóm SV | Khởi tạo cấu trúc SRS ban đầu theo khung ISO/IEC/IEEE 29148:2018. |
+| **0.5** | 20/10/2026 | Nguyễn Quang Đức | Bổ sung đặc tả mô hình đồ thị Neo4j, giao dịch toàn vẹn (ACID) và API nghiệp vụ. |
+| **0.9** | 25/10/2026 | Chu Đức Vân | Bổ sung đặc tả bảo mật Redis, chống Brute-force, OTP 2 bước và yêu cầu phi chức năng. |
+| **1.0** | 28/10/2026 | Cả nhóm | Hoàn thiện ma trận truy vết, trích xuất dữ liệu nghiệm thu hiệu năng thực tế. |
 
 ---
 
@@ -409,13 +411,13 @@ Ma trận đối chiếu liên kết từ các yêu cầu cốt lõi của đề
 
 ---
 
-### 9.2. Danh mục các mục thông tin cần điền thực tế khi nộp bài
+### 9.2. Danh mục thông tin nghiệm thu hồ sơ thực tế
 
-| Ký hiệu mục | Vị trí xuất hiện | Hướng dẫn xử lý khi nộp bài chính thức |
+| Ký hiệu mục | Vị trí xuất hiện | Giá trị đồng bộ thực tế khi nộp bài chính thức |
 | :--- | :--- | :--- |
-| **`[ĐIỀN NGÀY]`** | Trang bìa, Bảng lịch sử sửa đổi | Điền ngày hoàn thiện tài liệu chính thức (ví dụ: `25/10/2026`). |
-| **`[HỌ TÊN – MSSV]`** | Trang bìa | Điền đầy đủ họ tên và mã số sinh viên của 2 thành viên nhóm thực hiện đồ án. |
-| **`[GIẢNG VIÊN]`** | Trang bìa | Điền học hàm, học vị và họ tên Giảng viên phụ trách giảng dạy / hướng dẫn đồ án. |
+| **Ngày nghiệm thu** | Trang bìa, Bảng lịch sử sửa đổi | `28/10/2026` (Phiên bản chính thức v1.0). |
+| **Sinh viên thực hiện** | Trang bìa, Bảng thông tin dự án | 1. Nguyễn Quang Đức (MSSV: 2001230195 - Nhóm trưởng)<br>2. Chu Đức Vân (MSSV: 2001231028) |
+| **Giảng viên hướng dẫn** | Trang bìa, Bảng thông tin dự án | ThS. Trần Quang Bình (Khoa CNTT - ĐH Công Thương TP.HCM). |
 
 *(Ghi chú: Toàn bộ các thông số kỹ thuật, ngưỡng đếm, thời gian TTL, mã HTTP và số liệu đo kiểm hiệu năng đã được trích xuất chính xác 100% từ mã nguồn và tài liệu đo lường thực tế, không còn bất kỳ mục nào mang trạng thái `[UNCERTAIN]` hoặc `[CHƯA ĐO]` trong hồ sơ).*
 
